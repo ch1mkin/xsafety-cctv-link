@@ -124,6 +124,30 @@ button.secondary {
   font-weight: 700;
 }
 
+.stage {
+  position: relative;
+  margin-top: 16px;
+}
+
+.stage video,
+.stage canvas {
+  width: 100%;
+  max-height: 420px;
+  border-radius: 12px;
+  background: #000;
+}
+
+.stage video {
+  border: 1px solid var(--border);
+  display: block;
+}
+
+.stage canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 video {
   width: 100%;
   max-height: 420px;

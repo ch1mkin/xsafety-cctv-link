@@ -15,8 +15,12 @@
       <input id="room" placeholder="INST-LDH-01" autocomplete="off" />
       <label for="camera">WEBCAM</label>
       <select id="camera"></select>
-      <video id="preview" autoplay muted playsinline></video>
-      <p class="status" id="occupancy">People detected · 0</p>
+      <div class="stage">
+        <video id="preview" autoplay muted playsinline></video>
+        <canvas id="hud"></canvas>
+      </div>
+      <p class="status" id="occupancy">Occupancy markers · 0</p>
+      <p class="help">Coloured squares mark occupancy in the live feed. They do not identify anyone.</p>
       <button id="start" type="button">Go live</button>
       <button id="copy" class="secondary" type="button">Copy watch URL</button>
       <p class="url" id="watch-url"></p>

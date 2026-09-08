@@ -67,21 +67,86 @@ function attachStream(video, stream) {
   });
 }
 
-function grabJpeg(video) {
+const TRACK_COLORS = ['#38E8FF', '#FF5C7A', '#F5A524', '#B388FF', '#3DDC97', '#FF8A4C'];
+
+function headFromPerson(bbox) {
+  const [x, y, w, h] = bbox;
+  const size = Math.max(22, Math.min(w * 0.58, h * 0.3));
+  return {
+    x: x + (w - size) / 2,
+    y: y + h * 0.03,
+    w: size,
+    h: size * 1.15,
+  };
+}
+
+function drawTrackBoxes(ctx, heads, scaleX, scaleY) {
+  heads.forEach((head, index) => {
+    const color = TRACK_COLORS[index % TRACK_COLORS.length];
+    const x = head.x * scaleX;
+    const y = head.y * scaleY;
+    const w = head.w * scaleX;
+    const h = head.h * scaleY;
+    const tick = Math.max(4, Math.min(12, w * 0.28));
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.fillStyle = `${color}22`;
+    ctx.lineWidth = 2;
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeRect(x, y, w, h);
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x, y + tick);
+    ctx.lineTo(x, y);
+    ctx.lineTo(x + tick, y);
+    ctx.moveTo(x + w - tick, y);
+    ctx.lineTo(x + w, y);
+    ctx.lineTo(x + w, y + tick);
+    ctx.moveTo(x, y + h - tick);
+    ctx.lineTo(x, y + h);
+    ctx.lineTo(x + tick, y + h);
+    ctx.moveTo(x + w - tick, y + h);
+    ctx.lineTo(x + w, y + h);
+    ctx.lineTo(x + w, y + h - tick);
+    ctx.stroke();
+    ctx.lineWidth = 1;
+    ctx.font = 'bold 11px ui-sans-serif, system-ui, sans-serif';
+    ctx.fillStyle = color;
+    ctx.fillText(`P-${String(index + 1).padStart(2, '0')}`, x, Math.max(12, y - 4));
+    ctx.restore();
+  });
+}
+
+function paintHud(canvas, video, heads) {
+  if (!canvas || !video?.videoWidth) return;
+  const width = video.videoWidth;
+  const height = video.videoHeight;
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, width, height);
+  drawTrackBoxes(ctx, heads, 1, 1);
+}
+
+function grabJpeg(video, heads) {
   if (!video || !video.videoWidth) return '';
   const canvas = grabJpeg.canvas || (grabJpeg.canvas = document.createElement('canvas'));
-  const width = 240;
+  const width = 360;
   const height = Math.max(1, Math.round((video.videoHeight / video.videoWidth) * width));
   if (canvas.width !== width || canvas.height !== height) {
     canvas.width = width;
     canvas.height = height;
   }
-  canvas.getContext('2d').drawImage(video, 0, 0, width, height);
-  return canvas.toDataURL('image/jpeg', 0.32);
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, width, height);
+  drawTrackBoxes(ctx, heads || [], width / video.videoWidth, height / video.videoHeight);
+  return canvas.toDataURL('image/jpeg', 0.45);
 }
 
-async function publishLive(room, video, peopleCount) {
-  const jpeg = grabJpeg(video);
+async function publishLive(room, video, peopleCount, heads) {
+  const jpeg = grabJpeg(video, heads);
   if (!jpeg) return;
   await fetch('/api/live', {
     method: 'POST',
@@ -123,6 +188,7 @@ window.XSafetyCctv = {
     const copyBtn = document.querySelector('#copy');
     const status = document.querySelector('#status');
     const preview = document.querySelector('#preview');
+    const hud = document.querySelector('#hud');
     const urlEl = document.querySelector('#watch-url');
     const initial = cleanRoom(pathRoom());
     if (initial) roomInput.value = initial;
@@ -130,6 +196,7 @@ window.XSafetyCctv = {
     let localStream;
     let peer;
     let peopleCount = 0;
+    let heads = [];
     let detector = null;
     let publishTimer;
     let detectTimer;
@@ -195,18 +262,21 @@ window.XSafetyCctv = {
         if (!detector || !preview.videoWidth) return;
         try {
           const preds = await detector.detect(preview);
-          peopleCount = preds.filter((item) => item.class === 'person' && item.score > 0.45).length;
+          const people = preds.filter((item) => item.class === 'person' && item.score > 0.45);
+          peopleCount = people.length;
+          heads = people.map((item) => headFromPerson(item.bbox));
+          paintHud(hud, preview, heads);
           const occupancy = document.querySelector('#occupancy');
-          if (occupancy) occupancy.textContent = `People detected · ${peopleCount}`;
+          if (occupancy) occupancy.textContent = `Occupancy markers · ${peopleCount}`;
         } catch {
           // Keep last occupancy if a frame fails.
         }
-      }, 2000);
+      }, 700);
       let publishing = false;
       publishTimer = window.setInterval(() => {
         if (publishing) return;
         publishing = true;
-        void publishLive(room, preview, peopleCount).finally(() => {
+        void publishLive(room, preview, peopleCount, heads).finally(() => {
           publishing = false;
         });
       }, 180);
