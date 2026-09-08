@@ -67,6 +67,36 @@ function attachStream(video, stream) {
   });
 }
 
+function grabJpeg(video) {
+  if (!video || !video.videoWidth) return '';
+  const canvas = document.createElement('canvas');
+  const width = 480;
+  const height = Math.max(1, Math.round((video.videoHeight / video.videoWidth) * width));
+  canvas.width = width;
+  canvas.height = height;
+  canvas.getContext('2d').drawImage(video, 0, 0, width, height);
+  return canvas.toDataURL('image/jpeg', 0.5);
+}
+
+async function publishLive(room, video, peopleCount) {
+  const jpeg = grabJpeg(video);
+  if (!jpeg) return;
+  await fetch('/api/live', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ room: cleanRoom(room), jpeg, peopleCount }),
+  });
+}
+
+async function loadDetector() {
+  try {
+    if (window.cocoSsd) return window.cocoSsd.load();
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 window.XSafetyCctv = {
   bootHome() {
     const roomInput = document.querySelector('#room');
@@ -97,6 +127,10 @@ window.XSafetyCctv = {
 
     let localStream;
     let peer;
+    let peopleCount = 0;
+    let detector = null;
+    let publishTimer;
+    let detectTimer;
 
     try {
       localStream = await navigator.mediaDevices.getUserMedia({
@@ -105,6 +139,7 @@ window.XSafetyCctv = {
       });
       attachStream(preview, localStream);
       await listCameras(cameraSelect);
+      detector = await loadDetector();
     } catch (err) {
       setStatus(status, 'Camera permission is required on this machine.', 'error');
       startBtn.disabled = true;
@@ -152,6 +187,22 @@ window.XSafetyCctv = {
       peer.on('call', (call) => {
         call.answer(localStream);
       });
+      window.clearInterval(publishTimer);
+      window.clearInterval(detectTimer);
+      detectTimer = window.setInterval(async () => {
+        if (!detector || !preview.videoWidth) return;
+        try {
+          const preds = await detector.detect(preview);
+          peopleCount = preds.filter((item) => item.class === 'person' && item.score > 0.45).length;
+          const occupancy = document.querySelector('#occupancy');
+          if (occupancy) occupancy.textContent = `People detected · ${peopleCount}`;
+        } catch {
+          // Keep last occupancy if a frame fails.
+        }
+      }, 1800);
+      publishTimer = window.setInterval(() => {
+        void publishLive(room, preview, peopleCount);
+      }, 700);
     });
 
     copyBtn.addEventListener('click', async () => {
@@ -165,6 +216,7 @@ window.XSafetyCctv = {
   startWatch() {
     const status = document.querySelector('#status');
     const video = document.querySelector('#live');
+    const fallback = document.querySelector('#fallback');
     const room = cleanRoom(pathRoom() || new URLSearchParams(window.location.search).get('room'));
     if (!room) {
       setStatus(status, 'Missing room code in the URL.', 'error');
@@ -183,6 +235,21 @@ window.XSafetyCctv = {
       });
     }
 
+    async function pollFrames() {
+      if (connected) return;
+      try {
+        const response = await fetch(`/api/live?room=${encodeURIComponent(room)}`);
+        if (!response.ok) return;
+        const payload = await response.json();
+        if (!payload.jpeg || !fallback) return;
+        fallback.src = payload.jpeg;
+        fallback.hidden = false;
+        setStatus(status, `Live occupancy feed · ${payload.peopleCount ?? 0} people`, 'ok');
+      } catch {
+        // Wait for the next tick.
+      }
+    }
+
     peer.on('open', () => {
       setStatus(status, 'Connecting to the webcam room…');
       join();
@@ -194,16 +261,21 @@ window.XSafetyCctv = {
       call.answer();
       call.on('stream', (stream) => {
         connected = true;
+        if (fallback) fallback.hidden = true;
         attachStream(video, stream);
         setStatus(status, 'Live occupancy feed.', 'ok');
       });
     });
     peer.on('error', (err) => {
       if (err?.type === 'peer-unavailable') {
-        setStatus(status, 'Waiting for the webcam machine to open Broadcast and keep the tab open…');
+        setStatus(status, 'Waiting for occupancy frames from the webcam machine…');
         return;
       }
       setStatus(status, err?.message || 'Could not join the room.', 'error');
     });
+    void pollFrames();
+    window.setInterval(() => {
+      void pollFrames();
+    }, 800);
   },
 };

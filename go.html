@@ -16,11 +16,14 @@
       <label for="camera">WEBCAM</label>
       <select id="camera"></select>
       <video id="preview" autoplay muted playsinline></video>
+      <p class="status" id="occupancy">People detected · 0</p>
       <button id="start" type="button">Go live</button>
       <button id="copy" class="secondary" type="button">Copy watch URL</button>
       <p class="url" id="watch-url"></p>
       <p class="status" id="status">Idle.</p>
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3"></script>
     <script src="/assets/peerjs.min.js"></script>
     <script src="/assets/app.js"></script>
     <script>
