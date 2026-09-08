@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Watch · XSAFETY CCTV</title>
+    <link rel="stylesheet" href="/assets/style.css" />
+  </head>
+  <body class="player">
+    <main>
+      <video id="live" autoplay muted playsinline></video>
+      <p class="status overlay" id="status">Connecting…</p>
+    </main>
+    <script src="/assets/peerjs.min.js"></script>
+    <script src="/assets/app.js"></script>
+    <script>
+      window.XSafetyCctv.startWatch();
+    </script>
+  </body>
+</html>

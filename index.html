@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>XSAFETY CCTV link</title>
+    <link rel="stylesheet" href="/assets/style.css" />
+  </head>
+  <body>
+    <main>
+      <p class="kicker">XSAFETY · REMOTE CAMERA URL</p>
+      <h1>Share a webcam with a <span>watch URL</span></h1>
+      <p>
+        Open Broadcast on the computer that has the wired webcam. Paste the matching watch URL onto the institution in the mobile app.
+      </p>
+      <label for="room">INSTITUTION CODE</label>
+      <input id="room" placeholder="INST-LDH-01" autocomplete="off" />
+      <div class="row">
+        <button id="go" type="button">Broadcast from this computer</button>
+        <button id="watch" class="secondary" type="button">Open watch URL</button>
+      </div>
+      <p class="help">
+        This site only helps browsers find each other. Keep the Broadcast tab open while you monitor from the phone.
+      </p>
+    </main>
+    <script src="/assets/app.js"></script>
+    <script>
+      window.XSafetyCctv.bootHome();
+    </script>
+  </body>
+</html>

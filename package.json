@@ -1,0 +1,9 @@
+{
+  "name": "xsafety-cctv-link",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Vercel-hosted webcam broadcast/watch URLs for XSAFETY remote CCTV.",
+  "scripts": {
+    "start": "npx --yes serve . -p 4173"
+  }
+}

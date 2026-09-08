@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Broadcast · XSAFETY CCTV</title>
+    <link rel="stylesheet" href="/assets/style.css" />
+  </head>
+  <body>
+    <main>
+      <p class="kicker">BROADCAST</p>
+      <h1>This computer is the camera</h1>
+      <p>Allow camera access, pick the wired webcam, then keep this tab open.</p>
+      <label for="room">INSTITUTION CODE</label>
+      <input id="room" placeholder="INST-LDH-01" autocomplete="off" />
+      <label for="camera">WEBCAM</label>
+      <select id="camera"></select>
+      <video id="preview" autoplay muted playsinline></video>
+      <button id="start" type="button">Go live</button>
+      <button id="copy" class="secondary" type="button">Copy watch URL</button>
+      <p class="url" id="watch-url"></p>
+      <p class="status" id="status">Idle.</p>
+    </main>
+    <script src="/assets/peerjs.min.js"></script>
+    <script src="/assets/app.js"></script>
+    <script>
+      window.XSafetyCctv.startBroadcast();
+    </script>
+  </body>
+</html>
