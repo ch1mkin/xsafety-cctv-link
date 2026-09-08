@@ -1,8 +1,9 @@
 {
-  "cleanUrls": true,
   "rewrites": [
-    { "source": "/go/:room", "destination": "/go.html" },
-    { "source": "/watch/:room", "destination": "/watch.html" }
+    { "source": "/go", "destination": "/go.html" },
+    { "source": "/go/:room", "destination": "/go.html?room=:room" },
+    { "source": "/watch", "destination": "/watch.html" },
+    { "source": "/watch/:room", "destination": "/watch.html?room=:room" }
   ],
   "headers": [
     {

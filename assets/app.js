@@ -33,11 +33,11 @@ function setStatus(el, message, kind) {
 }
 
 function watchUrl(room) {
-  return `${window.location.origin}/watch/${encodeURIComponent(cleanRoom(room))}`;
+  return `${window.location.origin}/watch.html?room=${encodeURIComponent(cleanRoom(room))}`;
 }
 
 function goUrl(room) {
-  return `${window.location.origin}/go/${encodeURIComponent(cleanRoom(room))}`;
+  return `${window.location.origin}/go.html?room=${encodeURIComponent(cleanRoom(room))}`;
 }
 
 async function listCameras(select) {
@@ -135,7 +135,7 @@ window.XSafetyCctv = {
       peer = new Peer(id, { debug: 0, config: ICE });
       peer.on('open', () => {
         setStatus(status, 'Live. Keep this tab open. Paste the watch URL in XSAFETY.', 'ok');
-        history.replaceState({}, '', `/go/${encodeURIComponent(room)}`);
+        history.replaceState({}, '', `/go.html?room=${encodeURIComponent(room)}`);
       });
       peer.on('error', (err) => {
         if (err?.type === 'unavailable-id') {
