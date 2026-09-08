@@ -69,13 +69,15 @@ function attachStream(video, stream) {
 
 function grabJpeg(video) {
   if (!video || !video.videoWidth) return '';
-  const canvas = document.createElement('canvas');
-  const width = 480;
+  const canvas = grabJpeg.canvas || (grabJpeg.canvas = document.createElement('canvas'));
+  const width = 240;
   const height = Math.max(1, Math.round((video.videoHeight / video.videoWidth) * width));
-  canvas.width = width;
-  canvas.height = height;
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
   canvas.getContext('2d').drawImage(video, 0, 0, width, height);
-  return canvas.toDataURL('image/jpeg', 0.5);
+  return canvas.toDataURL('image/jpeg', 0.32);
 }
 
 async function publishLive(room, video, peopleCount) {
@@ -135,7 +137,7 @@ window.XSafetyCctv = {
     try {
       localStream = await navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { width: { ideal: 640 }, height: { ideal: 360 }, frameRate: { ideal: 15 } },
       });
       attachStream(preview, localStream);
       await listCameras(cameraSelect);
@@ -199,10 +201,15 @@ window.XSafetyCctv = {
         } catch {
           // Keep last occupancy if a frame fails.
         }
-      }, 1800);
+      }, 2000);
+      let publishing = false;
       publishTimer = window.setInterval(() => {
-        void publishLive(room, preview, peopleCount);
-      }, 700);
+        if (publishing) return;
+        publishing = true;
+        void publishLive(room, preview, peopleCount).finally(() => {
+          publishing = false;
+        });
+      }, 180);
     });
 
     copyBtn.addEventListener('click', async () => {
@@ -276,6 +283,6 @@ window.XSafetyCctv = {
     void pollFrames();
     window.setInterval(() => {
       void pollFrames();
-    }, 800);
+    }, 220);
   },
 };

@@ -21,6 +21,7 @@ function cors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Cache-Control', 'no-store');
 }
 
 function roomKey(value) {
@@ -98,7 +99,7 @@ export default async function handler(req, res) {
     }
     const row = { jpeg, peopleCount, at: new Date().toISOString() };
     store.set(room, row);
-    await saveRemote(room, jpeg, peopleCount);
+    void saveRemote(room, jpeg, peopleCount);
     res.status(200).json({ ok: true, peopleCount });
     return;
   }
